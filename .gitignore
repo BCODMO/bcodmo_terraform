@@ -29,3 +29,6 @@ override.tf.json
 # example: *tfplan*
 #
 **/.env
+
+# Mac files
+.DS_Store
