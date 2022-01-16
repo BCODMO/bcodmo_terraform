@@ -33,6 +33,21 @@ resource "aws_alb_listener" "front_end" {
   }
 }
 
+resource "aws_alb_listener" "front_end_redirect" {
+  load_balancer_arn = aws_alb.laminar_web.id
+  port              = "80"
+  protocol          = "HTTP"
+
+
+  default_action {
+    type             = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
 
 resource "aws_alb" "laminar_app" {
   name            = "laminar-app-${terraform.workspace}"
