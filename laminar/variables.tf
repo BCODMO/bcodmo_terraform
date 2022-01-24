@@ -6,8 +6,6 @@ variable "laminar_tmp_directory" {
   default = "/laminar"
 }
 
-variable "aws_access_key" {}
-variable "aws_secret_access_key" {}
 variable "redis_url" {}
 variable "github_issue_access_token" {}
 

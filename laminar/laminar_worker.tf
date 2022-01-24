@@ -33,14 +33,6 @@ resource "aws_ecs_task_definition" "laminar_worker" {
         },
         "environment": [
             {
-                "name": "AWS_ACCESS_KEY_ID",
-                "value": "${var.aws_access_key}"
-            },
-            {
-                "name": "AWS_SECRET_ACCESS_KEY",
-                "value": "${var.aws_secret_access_key}"
-            },
-            {
                 "name": "C_FORCE_ROOT",
                 "value": "true"
             },
