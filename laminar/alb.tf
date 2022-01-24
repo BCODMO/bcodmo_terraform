@@ -40,7 +40,7 @@ resource "aws_alb_listener" "front_end_redirect" {
 
 
   default_action {
-    type             = "redirect"
+    type = "redirect"
     redirect {
       port        = "443"
       protocol    = "HTTPS"

@@ -6,7 +6,6 @@ variable "laminar_tmp_directory" {
   default = "/laminar"
 }
 
-variable "redis_url" {}
 variable "github_issue_access_token" {}
 
 variable "whoi_ip" {

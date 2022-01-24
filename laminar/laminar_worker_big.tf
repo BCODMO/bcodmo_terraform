@@ -38,11 +38,11 @@ resource "aws_ecs_task_definition" "laminar_worker_big" {
             },
             {
                 "name": "CELERY_BROKER_URL",
-                "value": "${var.redis_url}"
+                "value": "${local.redis_address}"
             },
             {
                 "name": "CELERY_RESULT_BACKEND",
-                "value": "${var.redis_url}"
+                "value": "${local.redis_address}"
             },
             {
                 "name": "ENVIRONMENT",
@@ -123,7 +123,7 @@ resource "aws_ecs_service" "laminar_worker_big" {
 
   network_configuration {
     subnets          = [aws_default_subnet.default_1a.id, aws_default_subnet.default_1b.id]
-    security_groups  = [aws_security_group.laminar.id]
+    security_groups  = [aws_security_group.laminar_hidden.id]
     assign_public_ip = "true"
 
 

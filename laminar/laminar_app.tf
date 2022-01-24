@@ -40,11 +40,11 @@ resource "aws_ecs_task_definition" "laminar_app" {
         "environment": [
             {
                 "name": "CELERY_BROKER_URL",
-                "value": "${var.redis_url}"
+                "value": "${local.redis_address}"
             },
             {
                 "name": "CELERY_RESULT_BACKEND",
-                "value": "${var.redis_url}"
+                "value": "${local.redis_address}"
             },
             {
                 "name": "DEBUG",
