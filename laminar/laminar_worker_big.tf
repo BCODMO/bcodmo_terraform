@@ -53,10 +53,6 @@ resource "aws_ecs_task_definition" "laminar_worker_big" {
                 "value": "app"
             },
             {
-                "name": "GITHUB_ISSUE_ACCESS_TOKEN",
-                "value": "${var.github_issue_access_token}"
-            },
-            {
                 "name": "LAMINAR_S3_HOST",
                 "value": "https://s3.amazonaws.com"
             },

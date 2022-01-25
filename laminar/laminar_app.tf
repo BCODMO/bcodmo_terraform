@@ -95,10 +95,6 @@ resource "aws_ecs_task_definition" "laminar_app" {
                 "value": "${var.laminar_submission_s3_bucket}"
             },
             {
-                "name": "GITHUB_ISSUE_ACCESS_TOKEN",
-                "value": "${var.github_issue_access_token}"
-            },
-            {
                 "name": "ORCID_CLIENT_ID",
                 "value": "${var.laminar_orcid_auth_client_id}"
             },
