@@ -67,6 +67,29 @@ resource "aws_iam_role_policy" "s3_access_policy" {
   EOF
 }
 
+resource "aws_iam_role_policy" "ecs_update_access_policy" {
+  name = "laminar_ecs_update_access_policy_${terraform.workspace}"
+  role = aws_iam_role.ecs_role.id
+
+  policy = <<-EOF
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Action": [
+                "ecs:*"
+        ],
+        "Effect": "Allow",
+        "Resource": "*",
+        "Condition": {
+            "StringEquals": { "ecs:cluster": "${aws_ecs_cluster.laminar.arn}" }
+        }
+      }
+    ]
+  }
+  EOF
+}
+
 resource "aws_iam_role_policy" "ecs_access_policy" {
   name = "laminar_ecs_access_policy_${terraform.workspace}"
   role = aws_iam_role.ecs_role.id
@@ -77,7 +100,7 @@ resource "aws_iam_role_policy" "ecs_access_policy" {
     "Statement": [
       {
         "Action": [
-               "ecr:GetAuthorizationToken",
+                "ecr:GetAuthorizationToken",
                 "ecr:BatchCheckLayerAvailability",
                 "ecr:GetDownloadUrlForLayer",
                 "ecr:BatchGetImage",
