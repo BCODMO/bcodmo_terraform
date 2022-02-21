@@ -10,3 +10,9 @@ You will need to import the https certificate. For example:
 ```
 terraform import aws_acm_certificate.cert arn:aws:acm:us-east-1:504672911985:certificate/7d76e817-d2dc-44e6-902c-d9cb8898e6f2
 ```
+
+You will need to import the default internet gateway:
+
+```
+terraform import aws_internet_gateway.internet_gateway igw-c4ac11bf
+```

@@ -1,10 +1,11 @@
 resource "aws_elasticache_subnet_group" "default" {
-  name       = "${terraform.workspace}-cache-subnet"
-  subnet_ids = [aws_default_subnet.default_1a.id, aws_default_subnet.default_1b.id]
+  name = "laminar-${var.environment[terraform.workspace]}-cache-subnet"
+
+  subnet_ids = [aws_subnet.subnet_public_a.id, aws_subnet.subnet_public_b.id]
 }
 
 resource "aws_elasticache_cluster" "default" {
-  cluster_id           = "laminar-${terraform.workspace}"
+  cluster_id           = "laminar-${var.environment[terraform.workspace]}"
   engine               = "redis"
   node_type            = "cache.t4g.micro"
   port                 = 6379
@@ -12,6 +13,7 @@ resource "aws_elasticache_cluster" "default" {
   engine_version       = "6.x"
   num_cache_nodes      = 1
   security_group_ids   = [aws_security_group.laminar.id]
+  subnet_group_name    = aws_elasticache_subnet_group.default.name
 
 }
 

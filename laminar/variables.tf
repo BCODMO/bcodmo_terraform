@@ -12,6 +12,13 @@ variable "whoi_ip" {
   default = "128.128.0.0/16"
 }
 
+variable "environment" {
+  default = {
+    "default" : "staging"
+    "prod" : "prod"
+  }
+}
+
 
 variable "laminar_version" {}
 variable "laminar_versions" {}
