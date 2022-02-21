@@ -7,4 +7,5 @@ variable "whoi_ip" {
 }
 
 variable "bcodmo_api_version" {}
+variable "elastic_search_url" {}
 
