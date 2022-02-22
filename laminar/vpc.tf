@@ -32,39 +32,6 @@ resource "aws_security_group" "laminar" {
   description = "Created by Terraform"
   vpc_id      = aws_vpc.vpc.id
 
-  ingress {
-    description = "Access HTTPS from WHOI"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "TCP"
-    cidr_blocks = [var.whoi_ip]
-  }
-
-  ingress {
-    description = "Access HTTP from WHOI (for redirect)"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "TCP"
-    cidr_blocks = [var.whoi_ip]
-  }
-
-  ingress {
-    description = "All ingress for self"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    self        = "true"
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  lifecycle {
-    ignore_changes = [ingress]
-  }
 }
 
 
@@ -103,6 +70,50 @@ resource "aws_security_group_rule" "allow_laminar_hidden" {
   source_security_group_id = aws_security_group.laminar_hidden.id
   security_group_id        = aws_security_group.laminar.id
   description              = "All ingress for hidden security group"
+
+}
+
+resource "aws_security_group_rule" "allow_laminar" {
+  type              = "ingress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  self              = "true"
+  security_group_id = aws_security_group.laminar.id
+  description       = "All ingress for self"
+
+}
+
+resource "aws_security_group_rule" "whoi_https" {
+  type              = "ingress"
+  description       = "Access HTTPS from WHOI"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "TCP"
+  cidr_blocks       = [var.whoi_ip]
+  security_group_id = aws_security_group.laminar.id
+
+}
+
+resource "aws_security_group_rule" "whoi_http" {
+  type              = "ingress"
+  description       = "Access HTTP from WHOI (for redirect)"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "TCP"
+  cidr_blocks       = [var.whoi_ip]
+  security_group_id = aws_security_group.laminar.id
+
+}
+
+resource "aws_security_group_rule" "laminar_out" {
+  type              = "egress"
+  description       = ""
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.laminar.id
 
 }
 
