@@ -47,6 +47,10 @@ resource "aws_ecs_task_definition" "laminar_app" {
                 "value": "${local.redis_address}"
             },
             {
+                "name": "FILE_STAGING_REDIS_URL",
+                "value": "${var.laminar_file_staging_redis_url}"
+            },
+            {
                 "name": "DEBUG",
                 "value": "false"
             },

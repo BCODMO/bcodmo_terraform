@@ -31,3 +31,4 @@ variable "laminar_submission_s3_bucket" {}
 variable "laminar_redmine_issue_base_url" {}
 variable "laminar_submission_base_url" {}
 variable "laminar_api_url" {}
+variable "laminar_file_staging_redis_url" {}
