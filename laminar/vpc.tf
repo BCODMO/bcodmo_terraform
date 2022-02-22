@@ -33,10 +33,18 @@ resource "aws_security_group" "laminar" {
   vpc_id      = aws_vpc.vpc.id
 
   ingress {
-    description = "Access all from WHOI"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    description = "Access HTTPS from WHOI"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "TCP"
+    cidr_blocks = [var.whoi_ip]
+  }
+
+  ingress {
+    description = "Access HTTP from WHOI (for redirect)"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "TCP"
     cidr_blocks = [var.whoi_ip]
   }
 

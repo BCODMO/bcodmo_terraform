@@ -102,6 +102,11 @@ resource "aws_lambda_function" "laminar_worker_up" {
   runtime = "python3.6"
   timeout = 60
 
+  vpc_config {
+    subnet_ids         = [aws_subnet.subnet_private.id]
+    security_group_ids = [aws_security_group.laminar.id]
+  }
+
   environment {
     variables = {
       ecs_cluster_name = aws_ecs_cluster.laminar.name
@@ -156,6 +161,11 @@ resource "aws_lambda_function" "laminar_worker_down" {
   runtime = "python3.6"
 
   timeout = 60
+
+  vpc_config {
+    subnet_ids         = [aws_subnet.subnet_private.id]
+    security_group_ids = [aws_security_group.laminar.id]
+  }
 
   environment {
     variables = {

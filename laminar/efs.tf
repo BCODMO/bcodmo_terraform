@@ -15,3 +15,9 @@ resource "aws_efs_mount_target" "laminar_cache" {
   subnet_id       = aws_subnet.subnet_public_a.id
   security_groups = [aws_security_group.laminar_hidden.id]
 }
+
+resource "aws_efs_mount_target" "laminar_cache_b" {
+  file_system_id  = aws_efs_file_system.efs_volume.id
+  subnet_id       = aws_subnet.subnet_public_b.id
+  security_groups = [aws_security_group.laminar_hidden.id]
+}
