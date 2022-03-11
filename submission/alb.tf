@@ -33,6 +33,22 @@ resource "aws_alb_listener" "front_end" {
   }
 }
 
+resource "aws_alb_listener" "front_end_redirect" {
+  load_balancer_arn = aws_alb.submission_go.id
+  port              = "80"
+  protocol          = "HTTP"
+
+
+  default_action {
+    type             = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+
 
 # Must be imported in
 resource "aws_acm_certificate" "cert" {

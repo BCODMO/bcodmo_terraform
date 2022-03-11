@@ -44,14 +44,6 @@ resource "aws_ecs_task_definition" "submission_go" {
                 "value": "${var.aws_endpoint}"
             },
             {
-                "name": "MINIO_ACCESS_KEY",
-                "value": "${var.aws_access_key}"
-            },
-            {
-                "name": "MINIO_SECRET_KEY",
-                "value": "${var.aws_secret_access_key}"
-            },
-            {
                 "name": "APP_USE_SSL",
                 "value": "true"
             },

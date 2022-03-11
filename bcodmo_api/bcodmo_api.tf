@@ -40,6 +40,10 @@ resource "aws_ecs_task_definition" "bcodmo_api" {
                 "value": "${var.bcodmo_api_version}"
             },
             {
+                "name": "ELASTIC_SEARCH_URL",
+                "value": "${var.elastic_search_url}"
+            },
+            {
                 "name": "PORT",
                 "value": "8080"
             }

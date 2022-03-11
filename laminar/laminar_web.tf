@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "laminar_web" {
-  name                 = "laminar_web_${terraform.workspace}"
+  name                 = "laminar_web_${var.environment[terraform.workspace]}"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -8,19 +8,19 @@ resource "aws_ecr_repository" "laminar_web" {
 }
 
 resource "aws_cloudwatch_log_group" "laminar_web" {
-  name              = "/ecs/laminar_web_${terraform.workspace}"
+  name              = "/ecs/laminar_web_${var.environment[terraform.workspace]}"
   retention_in_days = "7"
 
 }
 
 
 resource "aws_ecs_task_definition" "laminar_web" {
-  family                = "laminar_web_${terraform.workspace}"
+  family                = "laminar_web_${var.environment[terraform.workspace]}"
   container_definitions = <<EOF
 [
     {
-        "name": "laminar_web_container_${terraform.workspace}",
-        "image": "${aws_ecr_repository.laminar_web.repository_url}:${terraform.workspace == "default" ? "latest" : var.laminar_version}",
+        "name": "laminar_web_container_${var.environment[terraform.workspace]}",
+        "image": "${aws_ecr_repository.laminar_web.repository_url}:${var.environment[terraform.workspace] == "staging" ? "latest" : var.laminar_version}",
         "portMappings": [
             {
                 "containerPort": 80
@@ -103,13 +103,13 @@ EOF
   requires_compatibilities = ["FARGATE"]
 
   tags = {
-    name = terraform.workspace == "default" ? "latest" : var.laminar_version
+    name = var.environment[terraform.workspace] == "staging" ? "latest" : var.laminar_version
   }
 
 }
 
 resource "aws_ecs_service" "laminar_web" {
-  name                 = "laminar_web_${terraform.workspace}"
+  name                 = "laminar_web_${var.environment[terraform.workspace]}"
   launch_type          = "FARGATE"
   force_new_deployment = "true"
   cluster              = aws_ecs_cluster.laminar.id
@@ -118,14 +118,14 @@ resource "aws_ecs_service" "laminar_web" {
   depends_on           = [aws_iam_role_policy.s3_access_policy, aws_iam_role_policy.ecs_access_policy, aws_alb.laminar_web]
 
   network_configuration {
-    subnets          = [aws_default_subnet.default_1a.id, aws_default_subnet.default_1b.id]
+    subnets          = [aws_subnet.subnet_public_a.id, aws_subnet.subnet_public_b.id]
     security_groups  = [aws_security_group.laminar.id]
     assign_public_ip = "true"
   }
 
   load_balancer {
     target_group_arn = aws_alb_target_group.web.id
-    container_name   = "laminar_web_container_${terraform.workspace}"
+    container_name   = "laminar_web_container_${var.environment[terraform.workspace]}"
     container_port   = 80
   }
 

@@ -1,22 +1,22 @@
 resource "aws_ecr_repository" "laminar_worker_big" {
-  name                 = "laminar_worker_big_${terraform.workspace}"
+  name                 = "laminar_worker_big_${var.environment[terraform.workspace]}"
   image_tag_mutability = "MUTABLE"
 
 }
 
 resource "aws_cloudwatch_log_group" "laminar_worker_big" {
-  name              = "/ecs/laminar_worker_big_${terraform.workspace}"
+  name              = "/ecs/laminar_worker_big_${var.environment[terraform.workspace]}"
   retention_in_days = "7"
 
 }
 
 resource "aws_ecs_task_definition" "laminar_worker_big" {
-  family                = "laminar_worker_big_${terraform.workspace}"
+  family                = "laminar_worker_big_${var.environment[terraform.workspace]}"
   container_definitions = <<EOF
 [
     {
-        "name": "laminar_worker_container_${terraform.workspace}",
-        "image": "${aws_ecr_repository.laminar_worker.repository_url}:${terraform.workspace == "default" ? "latest" : var.laminar_version}",
+        "name": "laminar_worker_container_${var.environment[terraform.workspace]}",
+        "image": "${aws_ecr_repository.laminar_worker.repository_url}:${var.environment[terraform.workspace] == "staging" ? "latest" : var.laminar_version}",
         "stopTimeout": 120,
         "mountPoints": [{
             "sourceVolume": "efs_laminar",
@@ -33,24 +33,16 @@ resource "aws_ecs_task_definition" "laminar_worker_big" {
         },
         "environment": [
             {
-                "name": "AWS_ACCESS_KEY_ID",
-                "value": "${var.aws_access_key}"
-            },
-            {
-                "name": "AWS_SECRET_ACCESS_KEY",
-                "value": "${var.aws_secret_access_key}"
-            },
-            {
                 "name": "C_FORCE_ROOT",
                 "value": "true"
             },
             {
                 "name": "CELERY_BROKER_URL",
-                "value": "${var.redis_url}"
+                "value": "${local.redis_address}"
             },
             {
                 "name": "CELERY_RESULT_BACKEND",
-                "value": "${var.redis_url}"
+                "value": "${local.redis_address}"
             },
             {
                 "name": "ENVIRONMENT",
@@ -59,10 +51,6 @@ resource "aws_ecs_task_definition" "laminar_worker_big" {
             {
                 "name": "FLASK_APP",
                 "value": "app"
-            },
-            {
-                "name": "GITHUB_ISSUE_ACCESS_TOKEN",
-                "value": "${var.github_issue_access_token}"
             },
             {
                 "name": "LAMINAR_S3_HOST",
@@ -113,14 +101,14 @@ EOF
   requires_compatibilities = ["FARGATE"]
 
   tags = {
-    name = terraform.workspace == "default" ? "latest" : var.laminar_version
+    name = var.environment[terraform.workspace] == "staging" ? "latest" : var.laminar_version
   }
 
 
 }
 
 resource "aws_ecs_service" "laminar_worker_big" {
-  name                 = "laminar_worker_big_${terraform.workspace}"
+  name                 = "laminar_worker_big_${var.environment[terraform.workspace]}"
   launch_type          = "FARGATE"
   platform_version     = "1.4.0"
   force_new_deployment = "true"
@@ -130,8 +118,8 @@ resource "aws_ecs_service" "laminar_worker_big" {
   depends_on           = [aws_iam_role_policy.s3_access_policy, aws_iam_role_policy.ecs_access_policy]
 
   network_configuration {
-    subnets          = [aws_default_subnet.default_1a.id, aws_default_subnet.default_1b.id]
-    security_groups  = [aws_security_group.laminar.id]
+    subnets          = [aws_subnet.subnet_public_a.id, aws_subnet.subnet_public_b.id]
+    security_groups  = [aws_security_group.laminar_hidden.id]
     assign_public_ip = "true"
 
 
@@ -154,7 +142,7 @@ resource "aws_appautoscaling_target" "laminar_worker_big_target" {
 }
 
 resource "aws_appautoscaling_policy" "laminar_worker_big_cpu_low" {
-  name               = "laminar-scale-down-${terraform.workspace}"
+  name               = "laminar-scale-down-${var.environment[terraform.workspace]}"
   policy_type        = "StepScaling"
   resource_id        = aws_appautoscaling_target.laminar_worker_big_target.resource_id
   scalable_dimension = aws_appautoscaling_target.laminar_worker_big_target.scalable_dimension
@@ -177,7 +165,7 @@ resource "aws_appautoscaling_policy" "laminar_worker_big_cpu_low" {
 
 resource "aws_cloudwatch_metric_alarm" "laminar_worker_big_cpu_low" {
   count               = 1
-  alarm_name          = "laminar_worker_big_cpu_low_${terraform.workspace}"
+  alarm_name          = "laminar_worker_big_cpu_low_${var.environment[terraform.workspace]}"
   alarm_description   = "Managed by Terraform"
   alarm_actions       = ["${aws_appautoscaling_policy.laminar_worker_big_cpu_low.arn}"]
   comparison_operator = "LessThanOrEqualToThreshold"
@@ -194,7 +182,7 @@ resource "aws_cloudwatch_metric_alarm" "laminar_worker_big_cpu_low" {
 }
 
 resource "aws_appautoscaling_policy" "laminar_worker_big_cpu_high" {
-  name               = "laminar-scale-up-${terraform.workspace}"
+  name               = "laminar-scale-up-${var.environment[terraform.workspace]}"
   policy_type        = "StepScaling"
   resource_id        = aws_appautoscaling_target.laminar_worker_big_target.resource_id
   scalable_dimension = aws_appautoscaling_target.laminar_worker_big_target.scalable_dimension
@@ -217,7 +205,7 @@ resource "aws_appautoscaling_policy" "laminar_worker_big_cpu_high" {
 
 resource "aws_cloudwatch_metric_alarm" "laminar_worker_big_cpu_high" {
   count               = 1
-  alarm_name          = "laminar_worker_big_cpu_high_${terraform.workspace}"
+  alarm_name          = "laminar_worker_big_cpu_high_${var.environment[terraform.workspace]}"
   alarm_description   = "Managed by Terraform"
   alarm_actions       = ["${aws_appautoscaling_policy.laminar_worker_big_cpu_high.arn}"]
   comparison_operator = "GreaterThanOrEqualToThreshold"
