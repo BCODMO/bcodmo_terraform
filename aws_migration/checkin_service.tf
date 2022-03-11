@@ -1,5 +1,5 @@
-resource "aws_efs_file_system" "checkin_efs_volume" {
-  creation_token = "bcodmo-checkin-${terraform.workspace}"
+resource "aws_efs_file_system" "checkin_efs" {
+  creation_token = "bcodmo-checkin-efs-${terraform.workspace}"
   lifecycle_policy {
     transition_to_ia = "AFTER_7_DAYS"
   }
@@ -7,15 +7,15 @@ resource "aws_efs_file_system" "checkin_efs_volume" {
 }
 
 resource "aws_efs_mount_target" "checkin_cache1b" {
-  file_system_id  = aws_efs_file_system.checkin_efs_volume.id
+  file_system_id  = aws_efs_file_system.checkin_efs.id
   subnet_id       = aws_subnet.bcodmo_checkin_us_east_1b.id
-  security_groups = [aws_security_group.bcodmo_checkin_ecs_sg.id]
+  security_groups = [aws_security_group.bcodmo_checkin_efs_sg.id]
 }
 
 resource "aws_efs_mount_target" "checkin_cache1a" {
-  file_system_id  = aws_efs_file_system.checkin_efs_volume.id
+  file_system_id  = aws_efs_file_system.checkin_efs.id
   subnet_id       = aws_subnet.bcodmo_checkin_us_east_1a.id
-  security_groups = [aws_security_group.bcodmo_checkin_ecs_sg.id]
+  security_groups = [aws_security_group.bcodmo_checkin_efs_sg.id]
 }
 
 resource "aws_ecs_cluster" "checkin" {
@@ -99,7 +99,9 @@ resource "aws_iam_role_policy" "checkin_iam_policy" {
       {
         "Action": [
             "dynamodb:GetItem",
-            "dynamodb:PutItem"
+            "dynamodb:PutItem",
+            "dynamodb:Query",
+            "dynamodb:UpdateItem"
         ],
         "Effect": "Allow",
         "Resource": "${aws_dynamodb_table.bcodmo_jobs.arn}"
@@ -173,7 +175,7 @@ EOF
   volume {
     name = "efs_checkin"
     efs_volume_configuration {
-      file_system_id = aws_efs_file_system.checkin_efs_volume.id
+      file_system_id = aws_efs_file_system.checkin_efs.id
       root_directory = "/"
       transit_encryption      = "ENABLED"
       authorization_config {

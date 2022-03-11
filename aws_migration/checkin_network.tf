@@ -129,7 +129,7 @@ resource "aws_route_table" "checkin_public_rt" {
     gateway_id = "${aws_internet_gateway.checkin_igw.id}"
   }
   tags = {
-    Name = "bcodmo-checkin-rt-${terraform.workspace}"
+    Name = "bcodmo-checkin-public-rt-${terraform.workspace}"
   }
 }
 
@@ -144,9 +144,16 @@ resource "aws_route_table" "checkin_private_rt" {
     cidr_block = "0.0.0.0/0"
     gateway_id = "${aws_nat_gateway.checkin_nat_gw.id}"
   }
+  tags = {
+    Name = "bcodmo-checkin-private-rt-${terraform.workspace}"
+  }
 }
 
-resource "aws_route_table_association" "checkin_private_rta" {
-  subnet_id      = [aws_subnet.bcodmo_checkin_us_east_1a.id, aws_subnet.bcodmo_checkin_us_east_1b.id]
+resource "aws_route_table_association" "checkin_private_rta_1a" {
+  subnet_id      = aws_subnet.bcodmo_checkin_us_east_1a.id
+  route_table_id = aws_route_table.checkin_private_rt.id
+}
+resource "aws_route_table_association" "checkin_private_rta_1b" {
+  subnet_id      = aws_subnet.bcodmo_checkin_us_east_1b.id
   route_table_id = aws_route_table.checkin_private_rt.id
 }
