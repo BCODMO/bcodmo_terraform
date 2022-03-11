@@ -27,8 +27,6 @@ resource "aws_s3_bucket" "pdf" {
     id      = "expire_objects"
     enabled = true
 
-    prefix = "*"
-
     expiration {
       days = 1
     }
@@ -74,6 +72,83 @@ resource "aws_s3_bucket_public_access_block" "pdf" {
   ignore_public_acls = true
 }
 
+# check-in
+
+resource "aws_kms_key" "bcodmo_checkin_s3_kms" {
+  description             = "KMS key for the bco-dmo file S3 bucket"
+  deletion_window_in_days = 15
+  tags = {
+    Name = "bcodmo-checkin-${terraform.workspace}"
+  }
+}
+
+resource "aws_s3_bucket" "bcodmo_checkin_s3" {
+  bucket = "bcodmo-files-${terraform.workspace}"
+  acl    = "private"
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET"]
+    allowed_origins = ["*"]
+    max_age_seconds = 3000
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "bcodmo_checkin" {
+  bucket = aws_s3_bucket.bcodmo_checkin_s3.id
+
+  block_public_acls   = true
+  block_public_policy = true
+  restrict_public_buckets = true
+  ignore_public_acls = true
+}
+
+resource "aws_sqs_queue" "bcodmo_checkin_dlq" {
+  name                      = "bcodmo-checkin-dlq-${terraform.workspace}"
+  delay_seconds             = 0
+  max_message_size          = 262144
+  message_retention_seconds = 1209600
+  
+}
+
+resource "aws_sqs_queue" "bcodmo_checkin_queue" {
+  name                      = "bcodmo-checkin-${terraform.workspace}"
+  delay_seconds             = 0
+  max_message_size          = 262144
+  message_retention_seconds = 345600
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.bcodmo_checkin_dlq.arn
+    maxReceiveCount     = 3
+  })
+  # redrive_allow_policy = jsonencode({
+  #   # There's a terraform incompatibility with aws on. Hence allowAll. Open gitIssue
+  #   redrivePermission = "allowAll"
+  # })
+  
+}
+
+resource "aws_sqs_queue_policy" "bcodmo_checkin_queue_policy" {
+  queue_url = aws_sqs_queue.bcodmo_checkin_queue.id
+  depends_on = [aws_lambda_function.job_manager]
+
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Id": "sqspolicy",
+  "Statement": [
+    {
+      "Sid": "__sender_statement",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "${aws_iam_role.iam_for_lambda_job_manager.arn}"
+      },
+      "Action": "SQS:SendMessage",
+      "Resource": "${aws_sqs_queue.bcodmo_checkin_queue.arn}"
+    }
+  ]
+}
+POLICY
+}
+
 resource "aws_iam_role_policy" "s3_pdf" {
   name = "pdf-generator-lambda-s3-${terraform.workspace}"
   role = aws_iam_role.iam_for_lambda_pdf_gen.name
@@ -99,7 +174,7 @@ resource "aws_iam_role_policy" "s3_pdf" {
       ],
       "Resource": "arn:aws:logs:*:*:*",
       "Effect": "Allow"
-    },
+    }
     ]
   })
 }
@@ -130,9 +205,6 @@ resource "aws_lambda_function" "pdf_generator" {
   role          = aws_iam_role.iam_for_lambda_pdf_gen.arn
   handler       = "lambda_function.lambda_handler"
 
-  # The filebase64sha256() function is available in Terraform 0.11.12 and later
-  # For Terraform 0.11.11 and earlier, use the base64sha256() function and the file() function:
-  # source_code_hash = "${base64sha256(file("lambda_function_payload.zip"))}"
   source_code_hash = filebase64sha256("../../deploy/Archive_test.zip")
 
   runtime = "python3.8"
@@ -154,38 +226,87 @@ resource "aws_cloudwatch_log_group" "example" {
   retention_in_days = 3
 }
 
+resource "aws_iam_role" "iam_for_lambda_job_manager" {
+  name = "job-manager-lambda-s3-${terraform.workspace}"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "job_manager_policy" {
+  name = "job_manager-lambda-${terraform.workspace}"
+  role = aws_iam_role.iam_for_lambda_job_manager.name
+  policy = jsonencode({
+    "Statement" : [
+      {
+      "Sid": "DynamoDBAccess",
+      "Action": [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem"
+      ],
+      "Effect": "Allow",
+      "Resource": aws_dynamodb_table.bcodmo_jobs.arn
+    },
+    {
+      "Sid": "CloudWatchLogsAccess",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:*",
+      "Effect": "Allow"
+    },
+    ]
+  })
+}
+
+resource "aws_lambda_function" "job_manager" {
+  filename      = "../../deploy/Archive_job.zip"
+  function_name = "job-manager-${terraform.workspace}"
+  role          = aws_iam_role.iam_for_lambda_job_manager.arn
+  handler       = "lambda_function.lambda_handler"
+
+  source_code_hash = filebase64sha256("../../deploy/Archive_job.zip")
+
+  runtime = "python3.8"
+
+  environment {
+    variables = {
+      bcodmo_jobs = aws_dynamodb_table.bcodmo_jobs.name
+    }
+  }
+  memory_size = 512
+  timeout = 60
+}
+
+resource "aws_cloudwatch_log_group" "job_manager_log_group" {
+  name              = "/aws/lambda/${aws_lambda_function.job_manager.function_name}"
+  retention_in_days = 3
+}
+
 resource "aws_api_gateway_rest_api" "bco_dmo_api" {
   name = "bcodmo-api-${terraform.workspace}"
-}
-
-# Remove this. Use open API specification for adding future paths.
-resource "aws_api_gateway_resource" "bcodmo_generate" {
-  rest_api_id = "${aws_api_gateway_rest_api.bco_dmo_api.id}"
-  parent_id   = "${aws_api_gateway_rest_api.bco_dmo_api.root_resource_id}"
-  path_part   = "generatepdf"
-}
-
-resource "aws_api_gateway_method" "method" {
-  rest_api_id   = aws_api_gateway_rest_api.bco_dmo_api.id
-  resource_id   = aws_api_gateway_resource.bcodmo_generate.id
-  http_method   = "GET"
-  authorization = "NONE"
-  api_key_required = true
-  request_parameters = {
-    "method.request.querystring.url" = true
-  }
-}
-
-resource "aws_api_gateway_integration" "integration" {
-  rest_api_id             = aws_api_gateway_rest_api.bco_dmo_api.id
-  resource_id             = aws_api_gateway_resource.bcodmo_generate.id
-  http_method             = aws_api_gateway_method.method.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.pdf_generator.invoke_arn
-  request_parameters = {
-        "integration.request.querystring.url" = "method.request.querystring.url"
+  body = templatefile(
+    "api.yml",
+    {
+      pdf_generator_url = aws_lambda_function.pdf_generator.invoke_arn,
+      job_manager_url = aws_lambda_function.job_manager.invoke_arn
     }
+    )
 }
 
 # Lambda
@@ -195,7 +316,16 @@ resource "aws_lambda_permission" "apigw_lambda" {
   function_name = aws_lambda_function.pdf_generator.function_name
   principal     = "apigateway.amazonaws.com"
 
-  source_arn = "${aws_api_gateway_rest_api.bco_dmo_api.execution_arn}/*/${aws_api_gateway_method.method.http_method}${aws_api_gateway_resource.bcodmo_generate.path}"
+  source_arn = "${aws_api_gateway_rest_api.bco_dmo_api.execution_arn}/*/*/*"
+}
+
+resource "aws_lambda_permission" "apigw_job_manager" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.job_manager.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.bco_dmo_api.execution_arn}/*/*/*"
 }
 
 resource "aws_acm_certificate" "cert" {
@@ -238,12 +368,10 @@ resource "aws_api_gateway_stage" "dev" {
 resource "aws_api_gateway_deployment" "bcodmo_deploy" {
   rest_api_id = aws_api_gateway_rest_api.bco_dmo_api.id
 
-  depends_on = [aws_api_gateway_method.method]
+  depends_on = [aws_api_gateway_rest_api.bco_dmo_api]
   triggers = {
     redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.bcodmo_generate.id,
-      aws_api_gateway_method.method.id,
-      aws_api_gateway_integration.integration.id,
+      aws_api_gateway_rest_api.bco_dmo_api.body,
     ]))
   }
 

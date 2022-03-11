@@ -1,0 +1,101 @@
+openapi: "3.0.1"
+info:
+  title: "bcodmo-api-default"
+  version: "2021-11-09T17:47:37Z"
+servers:
+- url: "https://default.bco-dmo.org"
+paths:
+  /generate/pdf:
+    get:
+      parameters:
+      - name: "url"
+        in: "query"
+        required: true
+        schema:
+          type: "string"
+      security:
+      - api_key: []
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: ${pdf_generator_url}
+        requestParameters:
+          integration.request.querystring.url: "method.request.querystring.url"
+        passthroughBehavior: "when_no_match"
+        timeoutInMillis: 29000
+  /job:
+    post:
+      summary: "POST a job to check-in a file"
+      security:
+      - api_key: []
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: ${job_manager_url}
+        requestBody:
+          description: Data for a file that needs to be checked in
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Job'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Job'
+        required: true
+        passthroughBehavior: "when_no_match"
+        timeoutInMillis: 29000
+    get:
+      parameters:
+      - name: "job_id"
+        in: "query"
+        required: true
+        schema:
+          type: "string"
+      security:
+      - api_key: []
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: ${job_manager_url}
+        requestParameters:
+          integration.request.querystring.url: "method.request.querystring.job_id"
+        passthroughBehavior: "when_no_match"
+        timeoutInMillis: 29000
+
+components:
+  schemas:
+    Job:
+      required:
+      - fileName
+      - submissionID
+      - sourcePath
+      - sourceBucket
+      - mimeType
+      type: object
+      properties:
+        fileName:
+          type: string
+          example: test.pdf
+        submissionID:
+          type: string
+          example: gJ0Y
+        resourceID:
+          type: string
+          example: gJ0Y
+        sourcePath:
+          type: string
+          example: s3 path
+        sourceBucket:
+          type: string
+          example: s3 path
+        mimeType:
+          type: string
+          example: pdf
+        md5:
+          type: string
+          example: ab9b9a88dee7455c6c0d372504f399dd
+  securitySchemes:
+    api_key:
+      type: "apiKey"
+      name: "x-api-key"
+      in: "header"
