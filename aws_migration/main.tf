@@ -261,6 +261,13 @@ resource "aws_iam_role_policy" "job_manager_policy" {
       "Resource": aws_dynamodb_table.bcodmo_jobs.arn
     },
     {
+        "Action": [
+                "sqs:*"
+            ],
+        "Effect": "Allow",
+        "Resource": "*"
+    },
+    {
       "Sid": "CloudWatchLogsAccess",
       "Action": [
         "logs:CreateLogGroup",
@@ -286,7 +293,8 @@ resource "aws_lambda_function" "job_manager" {
 
   environment {
     variables = {
-      bcodmo_jobs = aws_dynamodb_table.bcodmo_jobs.name
+      bcodmo_jobs = aws_dynamodb_table.bcodmo_jobs.name,
+      job_queue_url = "${aws_sqs_queue.bcodmo_checkin_queue.url}"
     }
   }
   memory_size = 512
