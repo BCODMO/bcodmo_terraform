@@ -1,9 +1,9 @@
 resource "aws_ecs_cluster" "submission" {
-  name = "submission-${terraform.workspace}"
+  name = "submission-${var.environment[terraform.workspace]}"
 }
 
 resource "aws_iam_role_policy" "s3_access_policy" {
-  name = "submission_s3_access_policy_${terraform.workspace}"
+  name = "submission_s3_access_policy_${var.environment[terraform.workspace]}"
   role = aws_iam_role.ecs_role.id
 
   policy = <<-EOF
@@ -23,7 +23,7 @@ resource "aws_iam_role_policy" "s3_access_policy" {
 }
 
 resource "aws_iam_role_policy" "ecs_access_policy" {
-  name = "submission_ecs_access_policy_${terraform.workspace}"
+  name = "submission_ecs_access_policy_${var.environment[terraform.workspace]}"
   role = aws_iam_role.ecs_role.id
 
   policy = <<-EOF
@@ -48,7 +48,7 @@ resource "aws_iam_role_policy" "ecs_access_policy" {
 }
 
 resource "aws_iam_role" "ecs_role" {
-  name = "submission_ecs_role_${terraform.workspace}"
+  name = "submission_ecs_role_${var.environment[terraform.workspace]}"
 
   assume_role_policy = <<EOF
 {

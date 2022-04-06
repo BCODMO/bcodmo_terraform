@@ -1,11 +1,11 @@
 resource "aws_alb" "submission_go" {
-  name            = "submission-go-${terraform.workspace}"
+  name            = "submission-go-${var.environment[terraform.workspace]}"
   subnets         = [aws_default_subnet.default_1a.id, aws_default_subnet.default_1b.id]
   security_groups = [aws_security_group.submission.id]
 }
 
 resource "aws_alb_target_group" "web" {
-  name        = "submission-go-tgroup-${terraform.workspace}"
+  name        = "submission-go-tgroup-${var.environment[terraform.workspace]}"
   port        = 80
   protocol    = "HTTP"
   vpc_id      = aws_default_vpc.default.id
@@ -40,7 +40,7 @@ resource "aws_alb_listener" "front_end_redirect" {
 
 
   default_action {
-    type             = "redirect"
+    type = "redirect"
     redirect {
       port        = "443"
       protocol    = "HTTPS"

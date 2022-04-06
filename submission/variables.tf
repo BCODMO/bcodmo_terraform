@@ -2,6 +2,21 @@ variable "region" {
   default = "us-east-1"
 }
 
+variable "redmine_vpc_id" {
+  default = "vpc-4288c638"
+}
+
+variable "redmine_account_id" {
+  default = "504672911985"
+}
+
+variable "environment" {
+  default = {
+    "default" : "staging"
+    "prod" : "prod"
+  }
+}
+
 variable "aws_endpoint" {
   default = "s3.amazonaws.com"
 }
@@ -40,6 +55,10 @@ variable "submission_version" {}
 variable "lod_dataset_roles_uri" {}
 variable "lod_project_roles_uri" {}
 variable "lod_programs_uri" {}
+variable "lod_file_mime_types_uri" {}
+
+variable "checkin_api_url" {}
+variable "checkin_api_key" {}
 
 variable "orcid_safelist" {}
 
@@ -61,3 +80,4 @@ variable "email_password" {}
 variable "email_host" {}
 variable "email_port" {}
 variable "email_to" {}
+
