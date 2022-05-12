@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "submission_go" {
-  name                 = "submission_go_${terraform.workspace}"
+  name                 = "submission_go_${var.environment[terraform.workspace]}"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -8,19 +8,19 @@ resource "aws_ecr_repository" "submission_go" {
 }
 
 resource "aws_cloudwatch_log_group" "submission_go" {
-  name              = "/ecs/submission_go_${terraform.workspace}"
+  name              = "/ecs/submission_go_${var.environment[terraform.workspace]}"
   retention_in_days = "7"
 
 }
 
 
 resource "aws_ecs_task_definition" "submission_go" {
-  family                = "submission_go_${terraform.workspace}"
+  family                = "submission_go_${var.environment[terraform.workspace]}"
   container_definitions = <<EOF
 [
     {
-        "name": "submission_go_container_${terraform.workspace}",
-        "image": "${aws_ecr_repository.submission_go.repository_url}:${terraform.workspace == "default" ? "latest" : var.submission_version}",
+        "name": "submission_go_container_${var.environment[terraform.workspace]}",
+        "image": "${aws_ecr_repository.submission_go.repository_url}:${var.environment[terraform.workspace] == "staging" ? "latest" : var.submission_version}",
         "portMappings": [
             {
                 "containerPort": 8080
@@ -75,6 +75,24 @@ resource "aws_ecs_task_definition" "submission_go" {
 
                 "name": "LOD_PROGRAMS_URI",
                 "value": "${var.lod_programs_uri}"
+
+            },
+            {
+
+                "name": "LOD_FILE_MIME_TYPES_URI",
+                "value": "${var.lod_file_mime_types_uri}"
+
+            },
+            {
+
+                "name": "CHECKIN_API_URL",
+                "value": "${var.checkin_api_url}"
+
+            },
+            {
+
+                "name": "CHECKIN_API_KEY",
+                "value": "${var.checkin_api_key}"
 
             },
             {
@@ -182,13 +200,13 @@ EOF
   requires_compatibilities = ["FARGATE"]
 
   tags = {
-    name = terraform.workspace == "default" ? "latest" : var.submission_version
+    name = var.environment[terraform.workspace] == "staging" ? "latest" : var.submission_version
   }
 
 }
 
 resource "aws_ecs_service" "submission_go" {
-  name                 = "submission_go_${terraform.workspace}"
+  name                 = "submission_go_${var.environment[terraform.workspace]}"
   launch_type          = "FARGATE"
   force_new_deployment = "true"
   cluster              = aws_ecs_cluster.submission.id
@@ -204,7 +222,7 @@ resource "aws_ecs_service" "submission_go" {
 
   load_balancer {
     target_group_arn = aws_alb_target_group.web.id
-    container_name   = "submission_go_container_${terraform.workspace}"
+    container_name   = "submission_go_container_${var.environment[terraform.workspace]}"
     container_port   = 8080
   }
 
