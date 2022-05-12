@@ -71,6 +71,7 @@ components:
       - sourcePath
       - sourceBucket
       - mimeType
+      - fileType
       type: object
       properties:
         fileName:
@@ -91,6 +92,9 @@ components:
         mimeType:
           type: string
           example: pdf
+        fileType:
+          type: string
+          example: application/pdf
         md5:
           type: string
           example: ab9b9a88dee7455c6c0d372504f399dd

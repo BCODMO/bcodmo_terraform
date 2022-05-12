@@ -126,7 +126,7 @@ resource "aws_ecs_task_definition" "bcodmo_checkin" {
 [
     {
         "name": "bcodmo_checkin_container_${terraform.workspace}",
-        "image": "${aws_ecr_repository.bcodmo_checkin_ecr.repository_url}:${terraform.workspace == "default" ? "latest" : var.checkin_version}",
+        "image": "${aws_ecr_repository.bcodmo_checkin_ecr.repository_url}:${var.checkin_version}",
         "portMappings": [],
         "mountPoints": [{
             "sourceVolume": "efs_checkin",
@@ -233,7 +233,7 @@ resource "aws_appautoscaling_policy" "checkin_scale_up" {
   service_namespace = aws_appautoscaling_target.checkin_ecs_target.service_namespace
 
   step_scaling_policy_configuration {
-    adjustment_type = "ExactCapacity"
+    adjustment_type = "ChangeInCapacity"
     metric_aggregation_type = "Maximum"
 
     step_adjustment {

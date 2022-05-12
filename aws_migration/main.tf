@@ -14,7 +14,8 @@ resource "aws_dynamodb_table" "bcodmo_jobs" {
 }
 
 resource "aws_s3_bucket" "pdf" {
-  bucket = "pdf-generator-${terraform.workspace}"
+  # Because pdf-generator-prod was already taken
+  bucket = "pdf-generator-${terraform.workspace == "prod" ? "prod1" : terraform.workspace}"
   acl    = "private"
   cors_rule {
     allowed_headers = ["*"]
@@ -262,10 +263,10 @@ resource "aws_iam_role_policy" "job_manager_policy" {
     },
     {
         "Action": [
-                "sqs:*"
+                "sqs:SendMessage"
             ],
         "Effect": "Allow",
-        "Resource": "*"
+        "Resource": "${aws_sqs_queue.bcodmo_checkin_queue.arn}"
     },
     {
       "Sid": "CloudWatchLogsAccess",
