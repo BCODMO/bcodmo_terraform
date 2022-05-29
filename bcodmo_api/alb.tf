@@ -13,6 +13,7 @@ resource "aws_alb_target_group" "web" {
   health_check {
     timeout  = 120
     interval = 300
+    path = "/health"
 
   }
 

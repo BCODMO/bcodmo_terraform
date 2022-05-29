@@ -44,6 +44,10 @@ resource "aws_ecs_task_definition" "bcodmo_api" {
                 "value": "${var.elastic_search_url}"
             },
             {
+                "name": "SPARQL_URL",
+                "value": "${var.sparql_url}"
+            },
+            {
                 "name": "PORT",
                 "value": "8080"
             }
