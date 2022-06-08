@@ -36,6 +36,10 @@ resource "aws_ecs_task_definition" "submission_go" {
         },
         "environment": [
             {
+                "name": "ENVIRONMENT",
+                "value": "${var.environment[terraform.workspace]}"
+            },
+            {
                 "name": "VERSION",
                 "value": "${var.submission_version}"
             },
@@ -58,6 +62,10 @@ resource "aws_ecs_task_definition" "submission_go" {
             {
                 "name": "MINIO_PERMISSIONS_BUCKET",
                 "value": "${aws_s3_bucket.submissions_permissions.bucket}"
+            },
+            {
+                "name": "LAMINAR_BUCKET",
+                "value": "${var.laminar_bucket}"
             },
             {
 
@@ -90,12 +98,6 @@ resource "aws_ecs_task_definition" "submission_go" {
 
             },
             {
-
-                "name": "CHECKIN_API_KEY",
-                "value": "${var.checkin_api_key}"
-
-            },
-            {
                 "name": "OFFLINE_DEVELOPMENT",
                 "value": "false"
             },
@@ -114,10 +116,6 @@ resource "aws_ecs_task_definition" "submission_go" {
             {
                 "name": "ID_GENERATOR_URL",
                 "value": "${var.id_generator_url}"
-            },
-            {
-                "name": "ID_GENERATOR_API_KEY",
-                "value": "${var.id_generator_api_key}"
             },
             {
                 "name": "AUTH_FORCE_LOGOUT_URL",
@@ -168,7 +166,6 @@ resource "aws_ecs_task_definition" "submission_go" {
                 "value": "${var.orcid_safelist}"
             },
             { "name": "REDMINE_API_URL", "value": "${var.redmine_api_url}" },
-            { "name": "REDMINE_API_ACCESS_KEY", "value": "${var.redmine_api_access_key}" },
             { "name": "REDMINE_PROJECT_ID", "value": "${var.redmine_project_id}" },
             { "name": "REDMINE_CATEGORY_ID_PROJECT", "value": "${var.redmine_category_id_project}" },
             { "name": "REDMINE_CATEGORY_ID_DATASET", "value": "${var.redmine_category_id_dataset}" },

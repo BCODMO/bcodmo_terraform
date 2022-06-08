@@ -23,6 +23,8 @@ variable "aws_endpoint" {
 variable "aws_access_key" {}
 variable "aws_secret_access_key" {}
 
+variable "laminar_bucket" {}
+
 variable "api_request_key" {}
 variable "api_response_key" {}
 
@@ -31,7 +33,6 @@ variable "whoi_ip" {
 }
 
 variable "id_generator_url" {}
-variable "id_generator_api_key" {}
 
 variable "auth_url" {
   default = "https://orcid.org/oauth/authorize"
@@ -58,12 +59,10 @@ variable "lod_programs_uri" {}
 variable "lod_file_mime_types_uri" {}
 
 variable "checkin_api_url" {}
-variable "checkin_api_key" {}
 
 variable "orcid_safelist" {}
 
 variable "redmine_api_url" {}
-variable "redmine_api_access_key" {}
 variable "redmine_project_id" {}
 variable "redmine_category_id_project" {}
 variable "redmine_category_id_dataset" {}
@@ -73,6 +72,7 @@ variable "redmine_status_id" {}
 variable "redmine_tracker_id" {}
 
 variable "submission_github_issue_uri" {}
+
 
 
 variable "email_from" {}
